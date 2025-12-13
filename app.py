@@ -668,5 +668,3 @@ def main_menu():
         else:
             printc("Invalid choice.", C.RED)
             time.sleep(0.7)
-          
-main_menu()
