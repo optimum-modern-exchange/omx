@@ -1,6 +1,97 @@
 Copyright (c) 2025 Viren Sahti
 All rights reserved.
 
-This software is the property of Viren Sahti. You may not claim it as your own, sell it, or redistribute it without explicit permission from the author. You are allowed to use and study it for personal or educational purposes only, with proper credit to the author.
+This software, including but not limited to its source code, binaries, structure,
+logic, algorithms, naming, documentation, and any associated files, is the
+exclusive and sole intellectual property of Viren Sahti.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. USE IT AT YOUR OWN RISK.
+No ownership, license, or rights are transferred to the user by installing,
+running, viewing, or interacting with this software, except for the limited
+permission explicitly stated below.
+
+────────────────────────────────────────────────────────────
+
+PERMITTED USE
+
+Permission is granted to use and study this software solely for personal or
+educational purposes, provided that:
+- proper and clear credit is given to Viren Sahti at all times
+- the software is not used for commercial, public, or production purposes
+- the software remains unmodified and unredistributed
+
+This permission may be revoked at any time by the author without notice.
+
+────────────────────────────────────────────────────────────
+
+STRICT PROHIBITIONS
+
+You may NOT, under any circumstances:
+
+- claim this software or any part of it as your own
+- remove, alter, or hide copyright notices or author attribution
+- sell, rent, sublicense, or use this software for commercial purposes
+- redistribute the software in original or modified form
+- publish, upload, or share the source code publicly or privately
+- modify, reverse engineer, decompile, obfuscate, or adapt the code
+- edit the code and present it as original or derived work
+- integrate this software into another project without explicit written permission
+- use this software as a base, template, or reference for competing products
+
+Any attempt to steal, copy, imitate, or rebrand this software or its code
+constitutes a violation of this license and intellectual property rights.
+
+────────────────────────────────────────────────────────────
+
+RESPONSIBILITY & LIABILITY DISCLAIMER
+
+The author, Viren Sahti, bears NO responsibility or liability for any use,
+misuse, abuse, or consequences resulting from the use of this software.
+
+This includes, but is not limited to:
+- illegal activities
+- malicious actions
+- attacks, abuse, exploitation, or misuse
+- data loss, data leaks, system damage, or service disruption
+- violations of laws, regulations, or third-party rights
+
+Any illegal, harmful, or unauthorized use of this software is the sole and full
+responsibility of the user. The author cannot and will not be held accountable
+under any circumstances.
+
+────────────────────────────────────────────────────────────
+
+DATA & INFORMATION NOTICE
+
+By using this software, you acknowledge and agree that:
+- the software may process, store, transmit, or interact with user-provided data
+- you are solely responsible for any data you provide, use, or expose
+- the author is not responsible for data handling, loss, leaks, or misuse
+- you use the software fully at your own risk
+
+You are responsible for securing your systems, credentials, information, and
+any data involved in the use of this software.
+
+────────────────────────────────────────────────────────────
+
+NO WARRANTY
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, OR NON-INFRINGEMENT.
+
+The author does not guarantee that the software is secure, error-free, or fit
+for any specific use.
+
+────────────────────────────────────────────────────────────
+
+ENFORCEMENT
+
+Any violation of this license immediately terminates all permissions granted.
+Unauthorized use may result in legal action.
+
+This license is governed by applicable law. All rights not explicitly granted
+are fully reserved by the author.
+
+────────────────────────────────────────────────────────────
+
+Author: Viren Sahti
