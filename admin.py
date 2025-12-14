@@ -9,6 +9,7 @@ import time
 import random
 import textwrap
 import httpx
+from typing import Optional
 
 class C:
     HEADER = '\033[95m'; BLUE = '\033[94m'; CYAN = '\033[96m'
@@ -40,9 +41,9 @@ class HTTPXAdminClient:
         self.timeout = timeout
         self.retries = max(1, int(retries))
         self.backoff = float(backoff)
-        self.token: str | None = None
-        self.username: str | None = None
-        self._client: httpx.AsyncClient | None = None
+        self.token: Optional[str] = None
+        self.username: Optional[str] = None
+        self._client: Optional[httpx.AsyncClient] = None
 
     def _url(self, path: str) -> str:
         return self.base_url + path
@@ -102,6 +103,7 @@ class HTTPXAdminClient:
         self.username = username.lower()
         return {"token": token, "role": role, "expires": resp.get("expires")}
 
+    # existing admin ops
     async def ban_user(self, target: str):
         payload = {"username": target}
         return await self._request("/admin/ban", "POST", json_payload=payload)
@@ -117,6 +119,19 @@ class HTTPXAdminClient:
     async def broadcast(self, subject: str, message: str):
         payload = {"subject": subject, "message": message}
         return await self._request("/admin/broadcast", "POST", json_payload=payload)
+
+    # new endpoints (must match server routes)
+    async def list_users(self):
+        # server supports GET or POST; use GET
+        return await self._request("/admin/list_users", "GET")
+
+    async def change_user_password(self, target: str, new_password: str):
+        payload = {"username": target, "new_password": new_password}
+        return await self._request("/admin/change_user_password", "POST", json_payload=payload)
+
+    async def change_user_username(self, old_username: str, new_username: str):
+        payload = {"username": old_username, "new_username": new_username}
+        return await self._request("/admin/change_user_username", "POST", json_payload=payload)
 
 class CommandRegistry:
     def __init__(self):
@@ -138,9 +153,13 @@ class AdminCLI:
         self._register_core_commands()
 
     def _register_core_commands(self):
+        # base admin ops
+        self.registry.register("list", "List users", self.cmd_list)
         self.registry.register("ban", "Ban a user", self.cmd_ban)
         self.registry.register("unban", "Unban a user", self.cmd_unban)
         self.registry.register("delete", "Delete a user", self.cmd_delete)
+        self.registry.register("setpass", "Reset a user's password", self.cmd_setpass)
+        self.registry.register("rename", "Rename a user", self.cmd_rename)
         self.registry.register("broadcast", "Broadcast message to all users", self.cmd_broadcast)
         self.registry.register("exit", "Exit CLI", self.cmd_exit)
 
@@ -216,6 +235,66 @@ class AdminCLI:
         for name, (desc, _) in self.registry._commands.items():
             prin(f"  {name:12} - {desc}", C.BLUE)
 
+    # ------------ new CLI commands ------------
+    async def cmd_list(self, args: list[str]):
+        """List users in a simple table."""
+        try:
+            resp = await self.client.list_users()
+        except APIError as e:
+            raise
+        users = resp.get("users") or []
+        if not users:
+            prin("No users found", C.YELLOW)
+            return
+        # print table header
+        prin(f"{'USERNAME':20} {'ROLE':8} {'CREATED (unix)'}", C.BOLD)
+        for u in users:
+            username = u.get("username", "")
+            role = u.get("role", "")
+            created = u.get("created", 0)
+            try:
+                created_h = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(created)))
+            except Exception:
+                created_h = str(created)
+            prin(f"{username:20} {role:8} {created_h}", C.CYAN)
+
+    async def cmd_setpass(self, args: list[str]):
+        """Reset a user's password (admin)."""
+        if not args:
+            target = input(color("Username to reset password for: ", C.BLUE)).strip().lower()
+        else:
+            target = args[0].lower()
+        if not target:
+            prin("No username provided", C.YELLOW); return
+        new_pw = getpass.getpass("New password: ")
+        if not new_pw:
+            prin("No password entered", C.YELLOW); return
+        if len(new_pw) < 8:
+            prin("Password too short (min 8)", C.YELLOW); return
+        if not confirm(f"Confirm reset password for {target}?"):
+            prin("Cancelled", C.YELLOW); return
+        resp = await self.client.change_user_password(target, new_pw)
+        prin(f"Password reset for {target}", C.GREEN)
+        prin(json.dumps(resp, indent=2, ensure_ascii=False), C.CYAN)
+
+    async def cmd_rename(self, args: list[str]):
+        """Rename a user (admin)."""
+        if len(args) >= 2:
+            old = args[0].lower(); new = args[1].lower()
+        else:
+            old = input(color("Old username: ", C.BLUE)).strip().lower()
+            new = input(color("New username: ", C.BLUE)).strip().lower()
+        if not old or not new:
+            prin("Missing old or new username", C.YELLOW); return
+        if old == new:
+            prin("Old and new username are the same", C.YELLOW); return
+        if not confirm(f"Rename user {old} -> {new}?"):
+            prin("Cancelled", C.YELLOW); return
+        resp = await self.client.change_user_username(old, new)
+        prin(f"Renamed {old} -> {new}", C.GREEN)
+        prin(json.dumps(resp, indent=2, ensure_ascii=False), C.CYAN)
+
+    # ------------ existing commands (improved with safer prints) ------------
     async def cmd_ban(self, args: list[str]):
         if not args:
             target = input(color("Username to ban: ", C.BLUE)).strip().lower()
