@@ -11,7 +11,12 @@ import re
 import httpx
 import colorama
 import socket
-from colorama import Fore, Style
+from colorama import Fore, Style as CStyle
+from prompt_toolkit import Application
+from prompt_toolkit.layout import Layout, HSplit
+from prompt_toolkit.widgets import TextArea
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.styles import Style as PTStyle
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -19,7 +24,7 @@ CONFIG_DIR = os.path.join(BASE_DIR, "app_config_data")
 os.makedirs(CONFIG_DIR, exist_ok=True)
 
 CONFIG_FILE = os.path.join(CONFIG_DIR, "client_config.json")
-CLIENT_VERSION = "v.1.0.1-stable"
+CLIENT_VERSION = "v.1.0.2-stable"
 
 # server als IP en poort
 DEFAULT_SERVER_HOST = "omx.dedyn.io"
@@ -40,8 +45,8 @@ class C:
     GREEN  = Fore.GREEN
     YELLOW = Fore.YELLOW
     RED    = Fore.RED
-    END    = Style.RESET_ALL
-    BOLD   = Style.BRIGHT
+    END    = CStyle.RESET_ALL
+    BOLD   = CStyle.BRIGHT
 
 def color(msg, col=C.END):
     return f"{col}{msg}{C.END}"
@@ -145,6 +150,41 @@ def show_mail_detail(mail):
     printc(f"{C.BOLD}Timestamp:{C.END} {time.ctime(ts)}", C.BLUE)
     printc("-" * 60, C.CYAN)
     
+def multiline_input_scrollable(existing_lines=None):
+    if existing_lines is None:
+        text = ""
+    else:
+        text = "\n".join(existing_lines)
+
+    text_area = TextArea(
+        text=text,
+        scrollbar=True,
+        line_numbers=True,
+        focus_on_click=True
+    )
+
+    kb = KeyBindings()
+
+    @kb.add("c-s")
+    def save(event):
+        event.app.exit(result=text_area.text.split("\n"))
+
+    style = PTStyle.from_dict({
+        "textarea": "bg:#1e1e1e #ffffff",
+    })
+
+    app = Application(
+        layout=Layout(HSplit([text_area])),
+        key_bindings=kb,
+        mouse_support=True,
+        style=style,
+        full_screen=True
+    )
+
+    new_lines = app.run()
+    clear_screen()
+    return new_lines
+    
 # ---------- Auth flows ----------
 def user_register():
     clear_screen()
@@ -242,10 +282,11 @@ def send_request(endpoint, payload):
 def action_send():
     if not require_login_flow():
         return
-    sender = CONFIG.get("username")
+
     clear_screen()
     printc("=== SEND MAIL ===", C.HEADER)
 
+    # ---- TO ----
     while True:
         to_raw = input("To (comma/space separated usernames)\nEnter: ").strip()
         to = parse_recipient_field(to_raw)
@@ -253,53 +294,60 @@ def action_send():
             break
         printc("No recipients entered. Try again.", C.RED)
 
+    # ---- CC ----
     cc = []
     if input("Add CC? (y/n): ").strip().lower() == "y":
         cc = parse_recipient_field(input("CC: ").strip())
 
+    # ---- BCC ----
     bcc = []
     if input("Add BCC? (y/n): ").strip().lower() == "y":
         bcc = parse_recipient_field(input("BCC: ").strip())
 
     subject = input("Subject: ").strip()
 
-    printc("Type your message. Type '.done' on a new line to finish.\n", C.YELLOW)
-    lines = []
-    while True:
-        try:
-            line = input()
-        except EOFError:
-            break
-        if line.strip() == ".done":
-            break
-        lines.append(line)
+    # ---- BODY EDITOR ----
+    printc("\nOpening editor... (Ctrl+S to save)", C.YELLOW)
+    time.sleep(0.3)
+
+    lines = multiline_input_scrollable()
     if not lines:
-        printc("No message entered. Aborting.", C.RED)
+        printc("No message entered. Cancelled.", C.YELLOW)
         pause()
         return
 
     message = "\n".join(lines)
 
-    printc("\n=== Preview ===", C.CYAN)
+    # ---- PREVIEW ----
+    clear_screen()
+    printc("=== PREVIEW ===", C.CYAN)
     printc(f"To: {', '.join(to)}")
     if cc: printc(f"CC: {', '.join(cc)}")
     if bcc: printc(f"BCC: {', '.join(bcc)}")
     printc(f"Subject: {subject}")
-    printc("-" * 40)
-    printc(message)
-    printc("-" * 40)
+    printc("-" * 50)
+    print(message)
+    printc("-" * 50)
 
     if input("Send mail? (y/n): ").strip().lower() != "y":
         printc("Cancelled.", C.YELLOW)
         pause()
         return
 
-    payload = {"to": to, "cc": cc, "bcc": bcc, "subject": subject, "message": message}
+    payload = {
+        "to": to,
+        "cc": cc,
+        "bcc": bcc,
+        "subject": subject,
+        "message": message
+    }
+
     ok, resp = send_request("/send", payload)
     if not ok:
         printc(f"Send failed: {resp}", C.RED)
     else:
         printc(f"Mail sent successfully. id={resp.get('mail_id')}", C.GREEN)
+
     pause()
     
 def list_folder(folder, page=0):
@@ -668,3 +716,4 @@ def main_menu():
         else:
             printc("Invalid choice.", C.RED)
             time.sleep(0.7)
+main_menu()            
